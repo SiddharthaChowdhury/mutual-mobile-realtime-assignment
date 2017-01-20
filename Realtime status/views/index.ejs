@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Realtime status</title>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.0.0-alpha.6/css/bootstrap.min.css">
+	<style type="text/css">
+		#dashboard{
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<!-- User -->
+		<div class="row" id="username">
+			<div class="col-md-12">Please enter your username</div>
+			<div class="col-md-12" id="userError"></div>
+			<form id="setUsername">
+				<div class="form-group">
+					<label for="usr">Userame:</label>
+					<input type="text" class="form-control" id="usernameIP">
+				</div>
+				<button type="submit">Enter</button>
+			</form>
+		</div>
+		<!-- inside dashboard -->
+		<div class="row" id="dashboard">
+			<div class="col-md-3">
+				<h4>People online</h4>
+				<div id="online-users"></div>
+			</div>
+			<div class="col-md-9">
+				<h4>Shared status</h4>
+				<form id="status-form">
+					<div class="form-group">
+						<label for="status">Comment:</label>
+						<textarea class="form-control" rows="5" id="status" placeholder="Enter your status"></textarea>
+					</div>
+					<button type="submit" class="btn btn-default">Share</button>
+				</form>
+				<div class="sharedStatus"></div>
+			</div>
+		</div>
+	</div>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		jQuery(function($){
+			var socket = io.connect();
+			var statusForm = $('#status-form');
+			var statusInput = $('#status');
+			var statusBox = $('sharedStatus');
+
+			statusForm.submit(function(e){
+				e.preventDefault();
+				socket.emit('send status', statusInput.val());
+			});
+
+			socket.on('new status', function(data){
+				sharedStatus.append('<div>'+data+'</div>');
+			});
+
+			// ----------------- USERNAME RESOLVER ----------------------
+
+			var usernameForm = $('#username');
+			var nameError = $("#userError");
+			var usernameInput = $('#usernameIP');
+			var onlineUsers = $('#online-users');
+
+			usernameForm.submit(function(e){
+				e.preventDefault();
+				socket.emit('new user', usernameInput.val(), function(data){
+					if(data){
+						$('#username').hide();
+						$('#dashboard').show();
+					}else{
+						nameError.html('<font color="red">Error! Username is taken. Try something else.</font>');
+					}
+				});
+				usernameInput.val('');
+			});
+
+			socket.on('usernames', function(data){
+				var ppls = '';				
+				for(var i=0; i< data.length; i++){
+					ppls += '<div class="person"><span>'+data[i]+'</span><a href="#" class="add-friend"> Add friend</a></div>';
+				}
+				onlineUsers.html(ppls);
+			});
+		})
+	</script>
+</body>
+</html>
