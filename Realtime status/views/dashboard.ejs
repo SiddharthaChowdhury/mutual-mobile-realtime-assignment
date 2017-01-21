@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Dashboard</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+	<style type="text/css">
+		.sm{font-size:0.4em;}
+		.notif{ cursor: pointer;}
+		textarea {margin-top:10px; resize: none;}
+		#notifications li{
+			padding:15px;
+		}
+		.notif-actions{
+			padding:7px;
+			text-align: right;
+		}
+		.notif-actions a{
+			text-decoration: none;
+			margin-right: 10px;
+		}
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<div class="text-center">
+					<h2>
+						<span><small class="sm">User logged in as </small><span class="username"><%= user %></span><small class="sm"><a class="logout" href="#"> Logout</a></small></span>
+					</h2>
+				</div>
+			</div>
+		</div>
+		
+			<!-- <h3 class="text-right">
+				<small>Welcome </small> 
+			</h3> -->
+		<div class="row">
+			<div class="col-md-12">
+				<div class="col-md-3">
+					<h4>People online</h4>
+					<small>
+						<div id="online-users-container"></div>
+					</small>
+				</div>
+				<div class="col-md-6">
+					<div class="col-md-12">
+						<h4> 
+							<div class="col-md-10">Share status</div>
+							<div class="col-md-2">
+								<small>
+									<div class="dropdown">
+										<a href="btn btn-link notif dropdown-toggle" data-toggle="dropdown">
+											<i class="fa fa-bell-o fa-lg" aria-hidden="true"></i> <span class="badge">0</span>
+										</a>
+										<!-- <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Dropdown Example</button> -->
+										<ul class="dropdown-menu" id="notifications">
+										    <li id="none">No notifications yet</li>
+										</ul>
+									</div>
+								</small>
+							</div>
+						</h4>
+					</div>
+					<div class="col-md-12">
+						<div class="form-group">
+							<textarea class="form-control" rows="4" id="comment"></textarea>
+						</div> 
+						<button class="btn btn-default pull-right"> Share </button>	
+					</div>
+				</div>
+				<div class="col-md-3">
+					<h4>Friends online</h4>
+					<small>
+						<div id="online-friends"></div>
+					</small>
+				</div>
+			</div>
+		</div>
+		
+	</div>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script type="text/javascript">
+		$(document).ready(function(){
+			var socket = io.connect();
+			var username = $('.username').text()
+
+			// Register this user if not
+			socket.emit('init-user', username, function(data){
+			});
+
+			// Fetch who is online
+			socket.on('online', function(online){
+				var ppls = '';
+				online.splice(online.indexOf(username), 1);
+
+				socket.emit('get-myhistory', username, function(data){
+					console.log(data)
+					if(data == null){
+						if(online.length == 0){
+							$('#online-users-container').html('No one\'s online except you.');
+						}else{
+							for(var i in online){
+								ppls += '<div class="person"><span>'+online[i]+' </span><a href="#" class="add-friend"><i class="fa fa-plus" aria-hidden="true"></i></a></div>';
+							}
+							$('#online-users-container').html(ppls);
+						}
+					}
+					else{
+						for(var i =0; i<data.friends.length; i++ ){
+							online.splice(online.indexOf(data.friends[i].username), 1);
+							ppls += '<div class="person"><span>'+data.friends[i].username+' </span> ('+data.friends[i].status+')</div>';
+						}
+						for(var i in online){
+							ppls += '<div class="person"><span>'+online[i]+' </span><a href="#" class="add-friend"><i class="fa fa-plus" aria-hidden="true"></i></a></div>';
+						}
+						$('#online-users-container').html(ppls);
+					}
+				});
+			});
+
+			// ------------------------ Receives notification
+			socket.on('notification', function(data){
+				// console.log(data);
+				for(var i in data){
+					$('#notifications').find('#none').remove();
+					var html = 	'<li>'
+					html +=			'<div>A '+data[i].type+' from '+data[i].from+' is '+data[i].status+'</div>'
+					if( data[i].status == 'pending' ){
+						html +=			'<div class="notif-actions">'
+						html +=				'<a href="#" class="accept-friend" data-friend="'+data[i].from+'">Accept</a>'
+						html +=			'</div>'
+					}
+					html +=		'</li>'
+					$('#notifications').append(html)
+
+					var notifCount = $('#notifications').find('li').length;
+					$('.badge').text(notifCount)
+					$('.person').each(function(){
+						if($(this).find('span').text().trim() == data[i].from){
+							$(this).find('a').remove();
+							$(this).append('<span>('+data[i].status+')</span>')
+						}
+					})
+				}
+			})
+
+			// ------------------------ Request for notifications
+			socket.emit('get-myNotifications',{}, function(data){
+				if(data){
+					var notifs = data;
+					if(notifs.length != 0){
+						for(var i in notifs){
+							$('#notifications').find('#none').remove();
+							var html = 	'<li>'
+							html +=			'<div>A '+notifs[i].type+' from '+notifs[i].from+' is '+notifs[i].status+'</div>'
+							if(notifs[i].status == 'pending'){
+								html +=			'<div class="notif-actions">'
+								html +=				'<a href="#" class="accept-friend" data-friend="'+notifs[i].from+'">Accept</a>'
+								html +=			'</div>'
+							}
+							html +=		'</li>'
+							$('#notifications').append(html)
+
+							var notifCount = $('#notifications').find('li').length;
+							$('.badge').text(notifCount)
+							$('.person').each(function(){
+								if($(this).find('span').text().trim() == notifs[i].from){
+									$(this).html('');
+									$(this).append('<span>'+notifs[i].from+'</span> ('+notifs[i].status+')')
+								}
+							})
+						}
+					}
+				}
+			})
+
+			// Add a friend
+			$(document).on('click','.add-friend', function(e){
+				e.preventDefault();
+				var self = $(this);
+				var frndTo = $(this).closest('.person').find('span').text().trim()
+				socket.emit('add-friend', frndTo, function(data){
+					self.find('i').remove();
+					self.text('request sent');
+				})
+			})
+
+
+			// Accept a friend
+			$(document).on('click','.accept-friend', function(e){
+				e.preventDefault();
+				var friend = $(this).attr('data-friend');
+				var self = $(this)
+				socket.emit('accept-friendRequest', friend, function(data){
+					self.closest('li').html('Friend request of '+ friend +' is accepted.');
+				})
+			})
+		})
+	</script>
+</body>
+</html>
