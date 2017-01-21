@@ -165,7 +165,8 @@ io.sockets.on('connection', function(socket){
 		$registeredUsers[to].emit('notification', [{
 			type: 'friend request',
 			from: curntUsr,
-			status: 'request accepted'
+			status: 'request accepted',
+			msg:"Friend request is accepted by "+curntUsr
 		}]);
 
 		callback({
@@ -201,7 +202,39 @@ io.sockets.on('connection', function(socket){
 		io.sockets.emit('online', Object.keys( $registeredUsers))
 	}
 
-	// function updateHistory(){
-	// 	$registeredUsers[socket.username].emit('my-history', $userHistory[socket.username])
-	// }
+	// on sharing status
+	socket.on('broadcast-my-status', function(data, callback){
+		var curntUsr = socket.username
+		if( typeof $userHistory[curntUsr] != 'object' ){
+			$userHistory[curntUsr] = {};
+			$userHistory[curntUsr]['friends'] = [];
+			$userHistory[curntUsr]['notifications'] = [];
+			$userHistory[curntUsr]['tweets'] = [];
+		}
+		var d = new Date(), format = ''; // for now
+		format+= d.getHours().toString()+':'; // => 9
+		format+= d.getMinutes().toString()+':'; // =>  30
+		format+= d.getSeconds().toString(); // => 51
+
+		var tweet = {
+			tweet: data,
+			by: curntUsr,
+			time: format
+		}
+		if(typeof $userHistory[curntUsr]['tweets'] == 'undefined'){
+			$userHistory[curntUsr]['tweets'] = [];
+		}
+		$userHistory[curntUsr]['tweets'].push(tweet);
+
+		var my_friends = $userHistory[curntUsr]['friends'];
+		for(var i in my_friends){
+			if(my_friends[i].status == 'friend'){
+				var frndSocket = $registeredUsers[my_friends[i].username];
+				if(frndSocket){
+					frndSocket.emit('new-tweet', tweet);
+				}
+			}
+		}
+		callback(tweet)	
+	})
 })

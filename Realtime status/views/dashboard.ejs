@@ -8,9 +8,7 @@
 		.sm{font-size:0.4em;}
 		.notif{ cursor: pointer;}
 		textarea {margin-top:10px; resize: none;}
-		#notifications li{
-			padding:15px;
-		}
+		#notifications li{padding:15px;}
 		.notif-actions{
 			padding:7px;
 			text-align: right;
@@ -19,6 +17,9 @@
 			text-decoration: none;
 			margin-right: 10px;
 		}
+		.tweet-cont{padding: 15px;}
+		.tweet-title{ padding:10px;}
+		.tweet-foot{ padding:10px;}
 	</style>
 </head>
 <body>
@@ -64,14 +65,24 @@
 						</h4>
 					</div>
 					<div class="col-md-12">
-						<div class="form-group">
-							<textarea class="form-control" rows="4" id="comment"></textarea>
-						</div> 
-						<button class="btn btn-default pull-right"> Share </button>	
+						<form id="shareStatusForm">
+							<div class="form-group">
+								<textarea class="form-control" rows="4" id="comment">
+								Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
+								tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
+								quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
+								consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
+								cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+								proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+								</textarea>
+							</div> 
+							<button class="btn btn-default pull-right" type="submit"> Share </button>	
+						</form>
+						<div id="tweet_area"></div>
 					</div>
 				</div>
 				<div class="col-md-3">
-					<h4>Friends online</h4>
+					<h4>Some container</h4>
 					<small>
 						<div id="online-friends"></div>
 					</small>
@@ -128,7 +139,10 @@
 				for(var i in data){
 					$('#notifications').find('#none').remove();
 					var html = 	'<li>'
-					html +=			'<div>A '+data[i].type+' from '+data[i].from+' is '+data[i].status+'</div>'
+					if(typeof data[i].msg == 'undefined')
+						html +=			'<div>A '+data[i].type+' from '+data[i].from+' is '+data[i].status+'</div>'
+					else
+						html +=			'<div>'+data[i].msg+'</div>'
 					if( data[i].status == 'pending' ){
 						html +=			'<div class="notif-actions">'
 						html +=				'<a href="#" class="accept-friend" data-friend="'+data[i].from+'">Accept</a>'
@@ -198,6 +212,37 @@
 				socket.emit('accept-friendRequest', friend, function(data){
 					self.closest('li').html('Friend request of '+ friend +' is accepted.');
 				})
+			})
+
+			// Share status
+			$('#shareStatusForm').submit(function(e){
+				e.preventDefault();
+				var input = $('#comment').val();
+				// if(input.length < 200){
+				// 	alert('Requirement states: ​ "status​ ​shared​ ​by​ ​your friends​ ​of​ ​200​ ​characters​ ​each"')
+				// }else{
+					socket.emit('broadcast-my-status', input, function(data){
+						console.log(data);
+						var html = '';
+						html += '<div class="col-md-12 tweet-cont">'
+						html += 	'<div class="tweet-title text-right"> <span>Shared by: <label>'+data.by+'</label></span></div>'
+						html += 	'<div class="tweet-desc">'+data.tweet+'</div>'
+						html += 	'<div class="tweet-foot">Timed: '+data.time+'</div>'
+						html += '</div>'
+						$('#tweet_area').prepend(html)
+					})
+				// }
+			});
+
+			// Get tweets shared by friends
+			socket.on('new-tweet', function(data){
+				var html = '';
+				html += '<div class="col-md-12 tweet-cont">'
+				html += 	'<div class="tweet-title text-right"> <span>Shared by: <label>'+data.by+'</label></span></div>'
+				html += 	'<div class="tweet-desc">'+data.tweet+'</div>'
+				html += 	'<div class="tweet-foot">Timed: '+data.time+'</div>'
+				html += '</div>'
+				$('#tweet_area').prepend(html)
 			})
 		})
 	</script>
