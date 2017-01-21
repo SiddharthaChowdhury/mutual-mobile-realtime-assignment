@@ -8,7 +8,7 @@
 		.sm{font-size:0.4em;}
 		.notif{ cursor: pointer;}
 		textarea {margin-top:10px; resize: none;}
-		#notifications li{padding:15px;}
+		#notifications li{padding:15px; width:500px;}
 		.notif-actions{
 			padding:7px;
 			text-align: right;
@@ -28,15 +28,12 @@
 			<div class="col-md-12">
 				<div class="text-center">
 					<h2>
-						<span><small class="sm">User logged in as </small><span class="username"><%= user %></span><small class="sm"><a class="logout" href="#"> Logout</a></small></span>
+						<span><small class="sm">User logged in as </small><span class="username"><%= user %></span></span>
 					</h2>
 				</div>
 			</div>
 		</div>
-		
-			<!-- <h3 class="text-right">
-				<small>Welcome </small> 
-			</h3> -->
+
 		<div class="row">
 			<div class="col-md-12">
 				<div class="col-md-3">
@@ -55,7 +52,6 @@
 										<a href="btn btn-link notif dropdown-toggle" data-toggle="dropdown">
 											<i class="fa fa-bell-o fa-lg" aria-hidden="true"></i> <span class="badge">0</span>
 										</a>
-										<!-- <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Dropdown Example</button> -->
 										<ul class="dropdown-menu" id="notifications">
 										    <li id="none">No notifications yet</li>
 										</ul>
@@ -65,26 +61,30 @@
 						</h4>
 					</div>
 					<div class="col-md-12">
-						<form id="shareStatusForm">
-							<div class="form-group">
-								<textarea class="form-control" rows="4" id="comment">
-								Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-								tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-								quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-								consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse
-								cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
-								proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-								</textarea>
-							</div> 
-							<button class="btn btn-default pull-right" type="submit"> Share </button>	
-						</form>
+
+						<div class="form-group">
+							<textarea class="form-control" rows="4" id="comment">Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. </textarea>
+						</div> 
+						<a href="#" id="shareStatusForm" class="btn btn-default pull-right"> Share </a>	
 						<div id="tweet_area"></div>
 					</div>
 				</div>
 				<div class="col-md-3">
-					<h4>Some container</h4>
+					<h4>Important Notes</h4>
 					<small>
-						<div id="online-friends"></div>
+						<div>
+							<ul>
+								<li><b>Atleast 2 browsers are required</b>. One user can login through one browser</li>
+								<li>It is <b>recommended</b> to open each views in full screen as views are not worked on.</li>
+								<li><b>Friend request</b> when sent, must be accepted by the recipient to confirm bonding.</li>
+								<li><b>Friend requests</b> is shown in notification dropdown <i class="fa fa-bell-o fa-lg" aria-hidden="true"></i></li>
+								<li><b>Notification</b> count is also shown</li>
+								<li>On accepting <b>friend request</b>, a respecive notification is sent to the sender.</li>
+								<li><b>Tweets/Status</b> that are shared is <b>volatile</b>. Once page is reloaded they are gone.</li>
+								<li>Most recent tweet/status is always on the top of the stack</li>
+								<li>Tweets/Status shared by friend is always stacked on top</li>
+							</ul>
+						</div>
 					</small>
 				</div>
 			</div>
@@ -109,7 +109,7 @@
 				online.splice(online.indexOf(username), 1);
 
 				socket.emit('get-myhistory', username, function(data){
-					console.log(data)
+					
 					if(data == null){
 						if(online.length == 0){
 							$('#online-users-container').html('No one\'s online except you.');
@@ -133,9 +133,9 @@
 				});
 			});
 
-			// ------------------------ Receives notification
+			// Receives notification
 			socket.on('notification', function(data){
-				// console.log(data);
+				
 				for(var i in data){
 					$('#notifications').find('#none').remove();
 					var html = 	'<li>'
@@ -162,7 +162,7 @@
 				}
 			})
 
-			// ------------------------ Request for notifications
+			// Request for notifications
 			socket.emit('get-myNotifications',{}, function(data){
 				if(data){
 					var notifs = data;
@@ -203,7 +203,6 @@
 				})
 			})
 
-
 			// Accept a friend
 			$(document).on('click','.accept-friend', function(e){
 				e.preventDefault();
@@ -215,14 +214,11 @@
 			})
 
 			// Share status
-			$('#shareStatusForm').submit(function(e){
+			$('#shareStatusForm').click(function(e){
 				e.preventDefault();
 				var input = $('#comment').val();
-				// if(input.length < 200){
-				// 	alert('Requirement states: ​ "status​ ​shared​ ​by​ ​your friends​ ​of​ ​200​ ​characters​ ​each"')
-				// }else{
 					socket.emit('broadcast-my-status', input, function(data){
-						console.log(data);
+						
 						var html = '';
 						html += '<div class="col-md-12 tweet-cont">'
 						html += 	'<div class="tweet-title text-right"> <span>Shared by: <label>'+data.by+'</label></span></div>'
@@ -231,7 +227,7 @@
 						html += '</div>'
 						$('#tweet_area').prepend(html)
 					})
-				// }
+
 			});
 
 			// Get tweets shared by friends

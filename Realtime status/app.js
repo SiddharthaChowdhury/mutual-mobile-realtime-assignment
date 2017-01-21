@@ -77,7 +77,6 @@ io.sockets.on('connection', function(socket){
 
 	// When someone adds a friend
 	socket.on('add-friend', function(user, callback){
-		// console.log(socket.username+ ' wants to add '+user)
 		var curntUsr = socket.username;
 		var to = user
 
